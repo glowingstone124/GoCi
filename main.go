@@ -9,8 +9,9 @@ import (
 )
 
 func main() {
+	http.HandleFunc("/", handleRoot)
 	http.HandleFunc("/webhook", handleGithubWebhook)
-	port := "8080"
+	port := "9090"
 	fmt.Println("Listening on port " + port)
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
@@ -34,12 +35,19 @@ type GithubPushEvent struct {
 	} `json:"sender"`
 }
 
+func handleRoot(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("GoCi"))
+}
+
 func handleGithubWebhook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid Request", http.StatusMethodNotAllowed)
 		return
 	}
+
 	body, err := io.ReadAll(r.Body)
+
 	if err != nil {
 		http.Error(w, "Internal Server Error. Please read log", http.StatusBadRequest)
 		fmt.Println(err.Error())
@@ -60,9 +68,11 @@ func handleGithubWebhook(w http.ResponseWriter, r *http.Request) {
 		//ignore
 		return
 	}
+
 	var sb strings.Builder
 	sb.WriteString("Received PUSH event.")
 	sb.WriteString(fmt.Sprintf("%s uploaded %d commits to Repository %s\n", event.Sender.Login, len(event.Commits), event.Repository.Name))
+
 	for _, commit := range event.Commits {
 		author := commit.Author.Name
 		if author == "" {
@@ -70,7 +80,8 @@ func handleGithubWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 		sb.WriteString(fmt.Sprintf("Author：%s\nDesc: %s\n-----------------------------------\n", author, commit.Message))
 	}
-	executeShellScript("runGradle.sh")
+
+	go executeShellScript("runGradle.sh")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Success!"))
 }
