@@ -9,9 +9,15 @@ import (
 )
 
 func main() {
+	configChannel := loadConfig()
+	cfg := <-configChannel
+	if cfg == nil {
+		log("No config file found")
+		return
+	}
 	http.HandleFunc("/", handleRoot)
 	http.HandleFunc("/webhook", handleGithubWebhook)
-	port := "9090"
+	port := fmt.Sprint(cfg.Port)
 	fmt.Println("Listening on port " + port)
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
