@@ -20,7 +20,7 @@ func log[T any](input ...T) {
 	}
 
 	logEntry := fmt.Sprintf("[%s] %s\n", time.Now().Format("2006-01-02 15:04:05"), logStr)
-
+	fmt.Println(logEntry)
 	if _, err := f.WriteString(logEntry); err != nil {
 		fmt.Println("Error writing log:", err)
 	}
