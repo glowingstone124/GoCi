@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -86,7 +87,8 @@ func handleGithubWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 		sb.WriteString(fmt.Sprintf("Author：%s\nDesc: %s\n-----------------------------------\n", author, commit.Message))
 	}
-
+	//Wait 500ms to sync build messages
+	time.Sleep(500 * time.Millisecond)
 	go executeShellScript("runGradle.sh")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Success!"))
