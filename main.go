@@ -48,6 +48,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGithubWebhook(w http.ResponseWriter, r *http.Request) {
+	needCompileFlag := true
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid Request", http.StatusMethodNotAllowed)
 		return
@@ -86,10 +87,15 @@ func handleGithubWebhook(w http.ResponseWriter, r *http.Request) {
 			author = "unknown"
 		}
 		sb.WriteString(fmt.Sprintf("Author：%s\nDesc: %s\n-----------------------------------\n", author, commit.Message))
+		if strings.HasPrefix(commit.Message, "[SKIP CI]") {
+			needCompileFlag = false
+		}
 	}
 	//Wait 500ms to sync build messages
 	time.Sleep(500 * time.Millisecond)
-	go executeShellScript("runGradle.sh")
+	if needCompileFlag {
+		go executeShellScript("runGradle.sh")
+	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Success!"))
 }
